@@ -145,46 +145,7 @@ extension CodeScannerView {
         
         var captureSession: AVCaptureSession?
         var previewLayer: AVCaptureVideoPreviewLayer!
-        
-        private let sessionQueue = DispatchQueue(label: "session queue")
-        
-        private var captureDevice: AVCaptureDevice? {
-            didSet {
-                guard let captureDevice = captureDevice else { return }
-                sessionQueue.async {
-                    self.updateSessionForCaptureDevice(captureDevice)
-                }
-            }
-        }
-        
-        public func switchCaptureDevice() {
-            if let captureDevice = captureDevice, let index = availableCaptureDevices.firstIndex(of: captureDevice) {
-                let nextIndex = (index + 1) % availableCaptureDevices.count
-                self.captureDevice = availableCaptureDevices[nextIndex]
-            } else {
-                self.captureDevice = AVCaptureDevice.default(for: .video)
-            }
-        }
-        
-        private func updateSessionForCaptureDevice(_ captureDevice: AVCaptureDevice) {
-            guard let captureSession else { return }
-            captureSession.beginConfiguration()
-            defer { captureSession.commitConfiguration() }
-            
-            for input in captureSession.inputs {
-                if let deviceInput = input as? AVCaptureDeviceInput {
-                    captureSession.removeInput(deviceInput)
-                }
-            }
-            
-            if let deviceInput = deviceInputFor(device: captureDevice) {
-                if !captureSession.inputs.contains(deviceInput), captureSession.canAddInput(deviceInput) {
-                    captureSession.addInput(deviceInput)
-                }
-            }
-            
-            updateVideoOutputConnection()
-        }
+        let fallbackVideoCaptureDevice = AVCaptureDevice.default(for: .video)
 
         private lazy var viewFinder: UIImageView? = {
             guard let image = UIImage(named: "viewfinder", in: .module, with: nil) else {
@@ -326,10 +287,14 @@ extension CodeScannerView {
         private func setupCaptureDevice() {
             captureSession = AVCaptureSession()
 
+            guard let videoCaptureDevice = parentView.videoCaptureDevice ?? fallbackVideoCaptureDevice else {
+                return
+            }
+
             let videoInput: AVCaptureDeviceInput
 
             do {
-                videoInput = try AVCaptureDeviceInput(device: captureDevice)
+                videoInput = try AVCaptureDeviceInput(device: videoCaptureDevice)
             } catch {
                 didFail(reason: .initError(error))
                 return
@@ -391,7 +356,7 @@ extension CodeScannerView {
         public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
             guard touches.first?.view == view,
                   let touchPoint = touches.first,
-                  let device = captureDevice,
+                  let device = parentView.videoCaptureDevice ?? fallbackVideoCaptureDevice,
                   device.isFocusPointOfInterestSupported
             else { return }
 
