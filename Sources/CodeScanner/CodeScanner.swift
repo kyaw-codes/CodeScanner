@@ -73,7 +73,6 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     public var shouldVibrateOnSuccess: Bool
     public var isTorchOn: Bool
     public var isGalleryPresented: Binding<Bool>
-    public var videoCaptureDevice: AVCaptureDevice?
     public var completion: (Result<ScanResult, ScanError>) -> Void
 
     public init(
@@ -86,7 +85,6 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         shouldVibrateOnSuccess: Bool = true,
         isTorchOn: Bool = false,
         isGalleryPresented: Binding<Bool> = .constant(false),
-        videoCaptureDevice: AVCaptureDevice? = AVCaptureDevice.bestForVideo,
         completion: @escaping (Result<ScanResult, ScanError>) -> Void
     ) {
         self.codeTypes = codeTypes
@@ -98,7 +96,6 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         self.shouldVibrateOnSuccess = shouldVibrateOnSuccess
         self.isTorchOn = isTorchOn
         self.isGalleryPresented = isGalleryPresented
-        self.videoCaptureDevice = videoCaptureDevice
         self.completion = completion
     }
 
